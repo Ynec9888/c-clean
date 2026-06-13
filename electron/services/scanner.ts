@@ -108,47 +108,59 @@ export class FileScanner {
     const results: ScannedFile[] = []
     let totalFiles = 0
     let scannedPaths = 0
+    const maxTotalFiles = 10000 // 最多扫描 10000 个文件
+    const startTime = Date.now()
+    const maxScanTime = 120000 // 最多扫描 2 分钟
 
     try {
       for (const scanPath of scanPaths) {
+        // 检查是否超时或超过最大文件数
         if (this.shouldStop) break
+        if (totalFiles >= maxTotalFiles) break
+        if (Date.now() - startTime > maxScanTime) break
 
         // 每个目录扫描前让出主线程
         await this.delay(50)
 
-        // 深度扫描用5层，快速扫描用2层
-        const maxDepth = options.deepScan ? 5 : 2
+        // 深度扫描用3层，快速扫描用2层
+        const maxDepth = options.deepScan ? 3 : 2
         const files = await this.scanDirectory(scanPath, options, 0, maxDepth)
+
+        // 限制每个目录最多处理 500 个文件，防止卡死
+        const limitedFiles = files.slice(0, 500)
 
         // 批量处理文件，每批10个
         const batchSize = 10
-        for (let i = 0; i < files.length; i += batchSize) {
+        for (let i = 0; i < limitedFiles.length; i += batchSize) {
           if (this.shouldStop) break
 
-          const batch = files.slice(i, i + batchSize)
+          const batch = limitedFiles.slice(i, i + batchSize)
 
           for (const file of batch) {
             if (this.shouldStop) break
+            if (totalFiles >= maxTotalFiles) break
 
             const analyzed = await this.analyzeFile(file)
             if (analyzed && this.shouldInclude(analyzed, options)) {
               results.push(analyzed)
               totalFiles++
 
-              // 每发现50个文件更新一次进度
-              if (totalFiles % 50 === 0) {
+              // 每发现20个文件更新一次进度
+              if (totalFiles % 20 === 0) {
                 onProgress({
                   currentPath: file,
                   filesFound: totalFiles,
                   totalSize: results.reduce((sum, f) => sum + f.size, 0),
                   percentage: Math.round(((scannedPaths + 1) / scanPaths.length) * 100)
                 })
+                // 让出主线程
+                await this.delay(10)
               }
             }
           }
 
           // 每批处理完让出主线程，避免卡死
-          await this.delay(20)
+          await this.delay(30)
         }
 
         scannedPaths++
@@ -179,45 +191,44 @@ export class FileScanner {
     const userProfile = os.homedir()
     const windir = process.env.WINDIR || 'C:\\Windows'
 
-    // 扫描整个 C 盘的主要目录
-    return [
-      // 系统临时文件
+    // 快速扫描路径（临时文件、缓存）
+    const quickPaths = [
       path.join(windir, 'Temp'),
       path.join(userProfile, 'AppData', 'Local', 'Temp'),
-
-      // 用户目录
-      path.join(userProfile, 'Downloads'),
-      path.join(userProfile, 'Documents'),
-      path.join(userProfile, 'Desktop'),
-      path.join(userProfile, 'Pictures'),
-      path.join(userProfile, 'Videos'),
-      path.join(userProfile, 'Music'),
-
-      // AppData 整个目录（包含所有软件数据）
-      path.join(userProfile, 'AppData', 'Local'),
-      path.join(userProfile, 'AppData', 'Roaming'),
-      path.join(userProfile, 'AppData', 'LocalLow'),
-
-      // Program Files
-      'C:\\Program Files',
-      'C:\\Program Files (x86)',
-      'C:\\ProgramData',
-
-      // Windows 系统
-      path.join(windir, 'SoftwareDistribution'),
-      path.join(windir, 'Logs'),
       path.join(windir, 'Prefetch'),
-      path.join(windir, 'Temp'),
-      path.join(windir, 'Panther'),
-      path.join(windir, 'WinSxS'),
-
-      // 回收站
-      'C:\\$Recycle.Bin',
-
-      // 其他常见位置
-      'C:\\Recovery',
-      'C:\\PerfLogs'
+      path.join(windir, 'SoftwareDistribution', 'Download'),
+      path.join(userProfile, 'AppData', 'Local', 'CrashDumps')
     ]
+
+    // 深度扫描额外路径（软件缓存，但不扫描整个目录）
+    const deepPaths = [
+      // 用户临时文件
+      path.join(userProfile, 'Downloads'),
+      path.join(userProfile, 'AppData', 'Local', 'Microsoft', 'Windows', 'INetCache'),
+      path.join(userProfile, 'AppData', 'Local', 'Microsoft', 'Windows', 'Explorer'),
+
+      // 常见软件缓存（只扫描缓存目录，不扫描整个 AppData）
+      path.join(userProfile, 'AppData', 'Local', 'Google', 'Chrome', 'User Data', 'Default', 'Cache'),
+      path.join(userProfile, 'AppData', 'Local', 'Microsoft', 'Edge', 'User Data', 'Default', 'Cache'),
+      path.join(userProfile, 'AppData', 'Local', 'Discord', 'Cache'),
+      path.join(userProfile, 'AppData', 'Local', 'Slack', 'Cache'),
+      path.join(userProfile, 'AppData', 'Local', 'Spotify', 'Storage'),
+      path.join(userProfile, 'AppData', 'Roaming', 'Tencent', 'WeChat', 'FileStorage'),
+      path.join(userProfile, 'AppData', 'Local', 'Tencent', 'QQ'),
+
+      // 游戏缓存
+      path.join(userProfile, 'AppData', 'Local', 'Steam', 'htmlcache'),
+
+      // 开发工具缓存
+      path.join(userProfile, 'AppData', 'Local', 'npm-cache'),
+      path.join(userProfile, 'AppData', 'Local', 'pip', 'cache'),
+
+      // Windows 日志
+      path.join(windir, 'Logs'),
+      path.join(windir, 'Panther')
+    ]
+
+    return [...quickPaths, ...deepPaths]
   }
 
   private async scanDirectory(

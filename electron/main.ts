@@ -23,6 +23,8 @@ app.commandLine.appendSwitch('--disk-cache-size', '52428800') // 50MB
 app.commandLine.appendSwitch('--media-cache-size', '52428800') // 50MB
 // 禁用硬件加速（减少资源占用）
 app.disableHardwareAcceleration()
+// 限制内存使用
+app.commandLine.appendSwitch('--js-flags', '--max-old-space-size=512')
 // ========== 优化结束 ==========
 
 let mainWindow: BrowserWindow | null = null
