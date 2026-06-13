@@ -438,11 +438,11 @@ ${JSON.stringify(fileInfos, null, 2)}
         break
 
       case 'mimo':
-        // 小米 MiMo API (兼容 OpenAI 格式)
-        url = 'https://api.xiaomi.com/v1/chat/completions'
+        // 小米 MiMo API - 通过硅基流动平台接入
+        url = 'https://api.siliconflow.cn/v1/chat/completions'
         headers['Authorization'] = `Bearer ${apiKey}`
         body = {
-          model: 'MiMo-v2.5',
+          model: 'Xiaomi/MiMo-7B-RL',
           messages: [{ role: 'user', content: prompt }],
           temperature: 0.3
         }
