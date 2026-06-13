@@ -7,13 +7,15 @@ import Runtime from '@/components/runtime/Runtime'
 import Settings from '@/components/settings/Settings'
 
 function App() {
-  const { currentView, theme, loadDiskInfo } = useAppStore()
+  const { currentView, theme, loadDiskInfo, loadAiConfig } = useAppStore()
 
   useEffect(() => {
     // 初始化主题
     document.documentElement.classList.toggle('dark', theme === 'dark')
     // 加载磁盘信息
     loadDiskInfo()
+    // 加载保存的 AI 配置
+    loadAiConfig()
   }, [])
 
   const renderView = () => {

@@ -66,6 +66,18 @@ const DANGEROUS_PATTERNS = [
   /swapfile\.sys/i
 ]
 
+// 白名单：这些路径下的文件不会被标记为可清理
+const WHITELIST_PATTERNS = [
+  /c-clean/i,           // C-Clean 自身的配置
+  /cclean/i,            // CCleaner 的配置
+  /\.config/i,          // 各种软件的配置目录
+  /settings\.json/i,    // 配置文件
+  /config\.json/i,      // 配置文件
+  /\.env/i,             // 环境变量文件
+  /\.git/i,             // Git 仓库
+  /node_modules/i       // Node.js 依赖
+]
+
 // 临时文件路径模式
 const TEMP_PATHS = [
   'Windows\\Temp',
@@ -235,6 +247,11 @@ export class FileScanner {
         return null
       }
 
+      // 检查是否在白名单中（保护配置文件）
+      if (this.isWhitelisted(filePath)) {
+        return null
+      }
+
       return {
         id: this.generateId(),
         path: filePath,
@@ -256,6 +273,10 @@ export class FileScanner {
 
   private isDangerous(filePath: string): boolean {
     return DANGEROUS_PATTERNS.some(pattern => pattern.test(filePath))
+  }
+
+  private isWhitelisted(filePath: string): boolean {
+    return WHITELIST_PATTERNS.some(pattern => pattern.test(filePath))
   }
 
   private categorizeFile(filePath: string, ext: string): FileCategory {
