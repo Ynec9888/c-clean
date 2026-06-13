@@ -4,49 +4,52 @@ import { motion } from 'framer-motion'
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6']
 
-function formatGB(bytes: number): string {
-  if (!bytes || isNaN(bytes) || bytes <= 0) return '0'
-  return (bytes / (1024 * 1024 * 1024)).toFixed(0)
-}
-
-function formatPercent(used: number, total: number): string {
-  if (!used || !total || isNaN(used) || isNaN(total) || total <= 0) return '0'
-  return ((used / total) * 100).toFixed(1)
-}
-
 export default function DiskUsageChart() {
   const { diskInfo } = useAppStore()
 
-  if (!diskInfo) {
-    return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-100 dark:border-gray-700">
-        <div className="animate-pulse">
-          <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-4"></div>
-          <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded"></div>
-        </div>
-      </div>
-    )
+  // 安全的数据转换
+  const safeNumber = (val: any): number => {
+    const num = Number(val)
+    return isNaN(num) || !isFinite(num) ? 0 : num
   }
 
-  // 确保数据是数字类型
-  const size = Number(diskInfo.size) || 0
-  const used = Number(diskInfo.used) || 0
-  const available = Number(diskInfo.available) || 0
+  const size = safeNumber(diskInfo?.size)
+  const used = safeNumber(diskInfo?.used)
+  const available = safeNumber(diskInfo?.available)
 
-  const usedGB = used / (1024 * 1024 * 1024)
-  const freeGB = available / (1024 * 1024 * 1024)
-  const totalGB = size / (1024 * 1024 * 1024)
+  // 转换为 GB
+  const toGB = (bytes: number) => bytes / (1024 * 1024 * 1024)
+
+  const totalGB = toGB(size)
+  const usedGB = toGB(used)
+  const freeGB = toGB(available)
   const usedPercent = totalGB > 0 ? (usedGB / totalGB) * 100 : 0
 
   const data = [
-    { name: '已使用', value: usedGB },
-    { name: '可用空间', value: freeGB }
+    { name: '已使用', value: Math.max(0, usedGB) },
+    { name: '可用空间', value: Math.max(0, freeGB) }
   ]
 
   const getUsageColor = () => {
     if (usedPercent > 90) return 'text-red-500'
     if (usedPercent > 80) return 'text-yellow-500'
     return 'text-green-500'
+  }
+
+  if (!diskInfo || size === 0) {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-100 dark:border-gray-700">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          C盘使用情况
+        </h3>
+        <div className="flex items-center justify-center h-48">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
+            <p className="text-gray-500 dark:text-gray-400">正在获取磁盘信息...</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -83,7 +86,7 @@ export default function DiskUsageChart() {
                 ))}
               </Pie>
               <Tooltip
-                formatter={(value: number) => `${value.toFixed(2)} GB`}
+                formatter={(value: number) => `${value.toFixed(1)} GB`}
                 contentStyle={{
                   backgroundColor: 'rgba(255, 255, 255, 0.9)',
                   border: 'none',
