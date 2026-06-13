@@ -15,7 +15,7 @@ const actions = [
   {
     id: 'quick-scan',
     label: '快速扫描',
-    description: '扫描临时文件和缓存',
+    description: '仅扫描临时文件和缓存（约30秒）',
     icon: Scan,
     color: 'from-blue-500 to-cyan-500',
     view: 'scanner' as const
@@ -23,7 +23,7 @@ const actions = [
   {
     id: 'clean-temp',
     label: '清理临时文件',
-    description: '删除系统和用户临时文件',
+    description: '只清理系统Temp目录的文件',
     icon: Trash2,
     color: 'from-green-500 to-emerald-500',
     view: 'scanner' as const
@@ -31,7 +31,7 @@ const actions = [
   {
     id: 'detect-runtime',
     label: '检测运行时',
-    description: '检查C++、.NET、Java等',
+    description: '检查VC++、.NET、Java等运行库',
     icon: Cpu,
     color: 'from-purple-500 to-pink-500',
     view: 'runtime' as const
@@ -39,7 +39,7 @@ const actions = [
   {
     id: 'full-scan',
     label: '深度扫描',
-    description: '全面扫描C盘文件',
+    description: '扫描所有可清理文件（较慢）',
     icon: FileSearch,
     color: 'from-orange-500 to-red-500',
     view: 'scanner' as const

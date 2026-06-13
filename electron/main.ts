@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron'
 import { join } from 'path'
 import { FileScanner } from './services/scanner'
 import { FileAnalyzer } from './services/analyzer'
@@ -110,6 +110,25 @@ function setupIPC(): void {
     }
   })
   ipcMain.on('window:close', () => mainWindow?.close())
+
+  // Shell 操作
+  ipcMain.handle('shell:openPath', async (event, filePath: string) => {
+    try {
+      await shell.openPath(filePath)
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  ipcMain.handle('shell:showItemInFolder', async (event, filePath: string) => {
+    try {
+      shell.showItemInFolder(filePath)
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: (error as Error).message }
+    }
+  })
 
   // 获取磁盘信息 - 使用 wmic 命令获取准确数据
   ipcMain.handle('get-disk-info', async () => {

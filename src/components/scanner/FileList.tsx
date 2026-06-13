@@ -184,14 +184,14 @@ export default function FileList({ files }: FileListProps) {
                       {/* 操作按钮 */}
                       <div className="mt-4 flex items-center space-x-2">
                         <button
-                          onClick={(e) => {
+                          onClick={async (e) => {
                             e.stopPropagation()
-                            // 打开文件所在目录
-                            const dir = file.path.substring(
-                              0,
-                              file.path.lastIndexOf('\\')
-                            )
-                            window.electronAPI?.shell?.openPath?.(dir)
+                            // 在文件资源管理器中显示文件
+                            try {
+                              await window.electronAPI.shell.showItemInFolder(file.path)
+                            } catch (err) {
+                              console.error('打开目录失败:', err)
+                            }
                           }}
                           className="flex items-center px-3 py-1.5 text-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                         >
@@ -199,9 +199,14 @@ export default function FileList({ files }: FileListProps) {
                           打开目录
                         </button>
                         <button
-                          onClick={(e) => {
+                          onClick={async (e) => {
                             e.stopPropagation()
-                            // 显示文件属性
+                            // 打开文件属性（通过打开文件所在目录并选中文件）
+                            try {
+                              await window.electronAPI.shell.showItemInFolder(file.path)
+                            } catch (err) {
+                              console.error('显示文件信息失败:', err)
+                            }
                           }}
                           className="flex items-center px-3 py-1.5 text-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                         >

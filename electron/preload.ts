@@ -9,6 +9,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     close: () => ipcRenderer.send('window:close')
   },
 
+  // Shell 操作
+  shell: {
+    openPath: (path: string) => ipcRenderer.invoke('shell:openPath', path),
+    showItemInFolder: (path: string) => ipcRenderer.invoke('shell:showItemInFolder', path)
+  },
+
   // 磁盘信息
   getDiskInfo: () => ipcRenderer.invoke('get-disk-info'),
 
