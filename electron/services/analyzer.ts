@@ -173,7 +173,7 @@ export class FileAnalyzer {
   async aiAnalyze(
     files: string[],
     apiKey: string,
-    provider: 'openai' | 'claude'
+    provider: 'openai' | 'claude' | 'deepseek' | 'mimo'
   ): Promise<FileAnalysis[]> {
     // 准备文件信息用于AI分析
     const fileInfos = files.map(f => ({
@@ -184,16 +184,33 @@ export class FileAnalyzer {
       lastModified: this.getLastModified(f)
     }))
 
-    // 调用AI API分析
-    const prompt = `分析以下C盘文件，判断它们是否可以安全删除：
+    // 优化的 AI 分析提示词
+    const prompt = `你是一个 Windows 系统文件分析专家。请分析以下 C 盘文件，给出详细的分析结果。
 
+文件列表：
 ${JSON.stringify(fileInfos, null, 2)}
 
-请返回JSON格式的分析结果，包含：
-1. 每个文件的风险等级 (safe/caution/dangerous)
-2. 所属软件或系统组件
-3. 删除建议
-4. 风险说明`
+请对每个文件返回以下信息（JSON数组格式）：
+
+{
+  "filePath": "文件路径",
+  "riskLevel": "safe/caution/dangerous",
+  "score": 0-100的风险分数,
+  "software": "所属软件名称（如：微信、QQ、Steam、Chrome、Windows系统等）",
+  "category": "软件类别（如：社交通讯、游戏、浏览器、系统、开发工具等）",
+  "description": "文件用途说明（简洁明了）",
+  "impact": "删除后的影响（如：会导致微信聊天记录丢失、游戏需要重新下载等）",
+  "recommendation": "删除建议（可安全删除/建议保留/谨慎删除）",
+  "reasons": ["风险原因1", "风险原因2"]
+}
+
+分析要点：
+1. 识别文件属于哪个软件（微信、QQ、游戏、浏览器等）
+2. 说明文件的具体用途
+3. 明确删除后会导致什么问题
+4. 给出是否建议删除的判断
+
+请只返回JSON数组，不要其他内容。`
 
     try {
       const aiResult = await this.callAI(prompt, apiKey, provider)

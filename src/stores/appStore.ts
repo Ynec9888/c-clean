@@ -206,19 +206,14 @@ export const useAppStore = create<AppState>((set, get) => ({
   aiProvider: 'deepseek' as 'openai' | 'claude' | 'deepseek' | 'mimo',
   setAiConfig: (apiKey, provider) => {
     set({ aiApiKey: apiKey, aiProvider: provider })
-    // 持久化存储到 localStorage（不会被清理工具删除）
-    try {
-      localStorage.setItem('cclean-ai-config', JSON.stringify({ apiKey, provider }))
-    } catch (e) {
-      console.error('保存配置失败:', e)
-    }
+    // 保存到项目目录的配置文件
+    window.electronAPI.saveConfig({ aiApiKey: apiKey, aiProvider: provider })
   },
-  loadAiConfig: () => {
+  loadAiConfig: async () => {
     try {
-      const saved = localStorage.getItem('cclean-ai-config')
-      if (saved) {
-        const config = JSON.parse(saved)
-        set({ aiApiKey: config.apiKey || '', aiProvider: config.provider || 'deepseek' })
+      const config = await window.electronAPI.loadConfig()
+      if (config) {
+        set({ aiApiKey: config.aiApiKey || '', aiProvider: config.aiProvider || 'deepseek' })
       }
     } catch (e) {
       console.error('加载配置失败:', e)

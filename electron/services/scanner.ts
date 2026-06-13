@@ -178,7 +178,8 @@ export class FileScanner {
     const userProfile = os.homedir()
     const windir = process.env.WINDIR || 'C:\\Windows'
 
-    return [
+    // 基础扫描路径
+    const basePaths = [
       path.join(windir, 'Temp'),
       path.join(userProfile, 'AppData', 'Local', 'Temp'),
       path.join(userProfile, 'AppData', 'Local', 'Microsoft', 'Windows', 'INetCache'),
@@ -187,6 +188,42 @@ export class FileScanner {
       path.join(windir, 'Prefetch'),
       path.join(windir, 'SoftwareDistribution', 'Download')
     ]
+
+    // 深度扫描额外路径（按软件分类）
+    const deepScanPaths = [
+      // 微信
+      path.join(userProfile, 'AppData', 'Roaming', 'Tencent', 'WeChat', 'FileStorage'),
+      path.join(userProfile, 'Documents', 'WeChat Files'),
+      // QQ
+      path.join(userProfile, 'AppData', 'Local', 'Tencent', 'QQ'),
+      path.join(userProfile, 'Documents', 'Tencent Files'),
+      // 浏览器缓存
+      path.join(userProfile, 'AppData', 'Local', 'Google', 'Chrome', 'User Data', 'Default', 'Cache'),
+      path.join(userProfile, 'AppData', 'Local', 'Microsoft', 'Edge', 'User Data', 'Default', 'Cache'),
+      path.join(userProfile, 'AppData', 'Local', 'Mozilla', 'Firefox', 'Profiles'),
+      // 游戏平台
+      path.join(userProfile, 'AppData', 'Local', 'Steam'),
+      path.join('C:', 'Program Files (x86)', 'Steam', 'steamapps', 'downloading'),
+      path.join(userProfile, 'AppData', 'Local', 'EpicGamesLauncher', 'Saved'),
+      // 开发工具
+      path.join(userProfile, 'AppData', 'Local', 'npm-cache'),
+      path.join(userProfile, 'AppData', 'Local', 'pip', 'cache'),
+      path.join(userProfile, 'AppData', 'Local', 'NuGet', 'Cache'),
+      path.join(userProfile, '.gradle', 'caches'),
+      path.join(userProfile, '.m2', 'repository'),
+      // 其他软件缓存
+      path.join(userProfile, 'AppData', 'Local', 'Discord', 'Cache'),
+      path.join(userProfile, 'AppData', 'Local', 'Slack', 'Cache'),
+      path.join(userProfile, 'AppData', 'Local', 'Spotify', 'Storage'),
+      path.join(userProfile, 'AppData', 'Local', 'Microsoft', 'Teams', 'Cache'),
+      path.join(userProfile, 'AppData', 'Roaming', 'Zoom', 'bin'),
+      // Windows 更新和日志
+      path.join(windir, 'Logs'),
+      path.join(windir, 'Panther'),
+      path.join(windir, 'SoftwareDistribution', 'DataStore', 'Logs')
+    ]
+
+    return [...basePaths, ...deepScanPaths]
   }
 
   private async scanDirectory(
@@ -337,33 +374,94 @@ export class FileScanner {
   }
 
   private identifySoftware(filePath: string): string | undefined {
-    const parts = filePath.split(path.sep)
-    const appDataIndex = parts.findIndex(p => p.toLowerCase() === 'appdata')
+    const lowerPath = filePath.toLowerCase()
 
-    if (appDataIndex !== -1 && appDataIndex + 2 < parts.length) {
-      // AppData/Local/SoftwareName 或 AppData/Roaming/SoftwareName
-      return parts[appDataIndex + 2]
-    }
-
-    // 尝试从路径中识别知名软件
-    const knownSoftware: Record<string, string> = {
-      'chrome': 'Google Chrome',
-      'firefox': 'Mozilla Firefox',
-      'edge': 'Microsoft Edge',
+    // 软件识别映射表
+    const softwareMap: Record<string, string> = {
+      // 社交通讯
+      'tencent\\wechat': '微信',
+      'tencent\\qq': 'QQ',
+      'tencent\\weixin': '微信',
+      'wechat files': '微信',
+      'tencent files': 'QQ',
       'discord': 'Discord',
       'slack': 'Slack',
-      'spotify': 'Spotify',
-      'vscode': 'Visual Studio Code',
+      'telegram': 'Telegram',
+      'zoom': 'Zoom',
+      'teams': 'Microsoft Teams',
+
+      // 浏览器
+      'google\\chrome': 'Google Chrome',
+      'mozilla\\firefox': 'Mozilla Firefox',
+      'microsoft\\edge': 'Microsoft Edge',
+      'opera': 'Opera',
+      'brave': 'Brave Browser',
+
+      // 游戏
+      'steam': 'Steam',
+      'epicgames': 'Epic Games',
+      'riot games': 'Riot Games',
+      'blizzard': '暴雪',
+      'ubisoft': '育碧',
+      'ea games': 'EA Games',
+      'minecraft': 'Minecraft',
+      'roblox': 'Roblox',
+
+      // 开发工具
+      'visual studio code': 'VS Code',
       'visual studio': 'Visual Studio',
       'jetbrains': 'JetBrains',
-      'npm': 'Node.js',
-      'pip': 'Python',
-      'nuget': '.NET/NuGet'
+      'git': 'Git',
+      'nodejs': 'Node.js',
+      'node_modules': 'Node.js',
+      'npm-cache': 'npm',
+      'python': 'Python',
+      'pip': 'Python pip',
+      'java': 'Java',
+      'gradle': 'Gradle',
+      'maven': 'Maven',
+      'nuget': 'NuGet',
+      'docker': 'Docker',
+
+      // 办公软件
+      'microsoft office': 'Microsoft Office',
+      'wps': 'WPS Office',
+      'adobe': 'Adobe',
+      'photoshop': 'Photoshop',
+      'premiere': 'Premiere Pro',
+
+      // 媒体
+      'spotify': 'Spotify',
+      'netflix': 'Netflix',
+      'vlc': 'VLC Media Player',
+      'obs': 'OBS Studio',
+
+      // 系统
+      'windows': 'Windows 系统',
+      'microsoft': 'Microsoft',
+      'windows defender': 'Windows Defender',
+      'windows update': 'Windows 更新',
+
+      // 其他
+      '7zip': '7-Zip',
+      'winrar': 'WinRAR',
+      'notepad++': 'Notepad++',
+      'everything': 'Everything',
+      'ccleaner': 'CCleaner'
     }
 
-    const lowerPath = filePath.toLowerCase()
-    for (const [key, name] of Object.entries(knownSoftware)) {
-      if (lowerPath.includes(key)) return name
+    // 遍历映射表进行匹配
+    for (const [key, name] of Object.entries(softwareMap)) {
+      if (lowerPath.includes(key)) {
+        return name
+      }
+    }
+
+    // 尝试从 AppData 路径推断
+    const parts = filePath.split(path.sep)
+    const appDataIndex = parts.findIndex(p => p.toLowerCase() === 'appdata')
+    if (appDataIndex !== -1 && appDataIndex + 2 < parts.length) {
+      return parts[appDataIndex + 2]
     }
 
     return undefined

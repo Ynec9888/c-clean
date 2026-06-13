@@ -15,6 +15,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     showItemInFolder: (path: string) => ipcRenderer.invoke('shell:showItemInFolder', path)
   },
 
+  // 配置文件
+  saveConfig: (config: any) => ipcRenderer.invoke('config:save', config),
+  loadConfig: () => ipcRenderer.invoke('config:load'),
+
   // 磁盘信息
   getDiskInfo: () => ipcRenderer.invoke('get-disk-info'),
 

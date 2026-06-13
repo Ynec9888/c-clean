@@ -50,4 +50,7 @@ $RECYCLE.BIN/
 # Temporary
 *.tmp
 *.temp
+
+# Config file (contains API keys)
+config.json
 C-Clean.exe

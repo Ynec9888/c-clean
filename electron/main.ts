@@ -1,9 +1,16 @@
 import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron'
 import { join } from 'path'
+import * as fs from 'fs'
 import { FileScanner } from './services/scanner'
 import { FileAnalyzer } from './services/analyzer'
 import { RuntimeDetector } from './services/runtime-detector'
 import { CleanerService } from './services/cleaner'
+
+// 配置文件路径（项目目录下）
+const getConfigPath = () => {
+  const appPath = app.getAppPath()
+  return join(appPath, 'config.json')
+}
 
 const isDev = !app.isPackaged
 
@@ -127,6 +134,30 @@ function setupIPC(): void {
       return { success: true }
     } catch (error) {
       return { success: false, error: (error as Error).message }
+    }
+  })
+
+  // 配置文件操作
+  ipcMain.handle('config:save', async (event, config) => {
+    try {
+      const configPath = getConfigPath()
+      fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8')
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  ipcMain.handle('config:load', async () => {
+    try {
+      const configPath = getConfigPath()
+      if (fs.existsSync(configPath)) {
+        const data = fs.readFileSync(configPath, 'utf-8')
+        return JSON.parse(data)
+      }
+      return null
+    } catch (error) {
+      return null
     }
   })
 
