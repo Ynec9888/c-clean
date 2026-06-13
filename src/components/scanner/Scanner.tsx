@@ -12,7 +12,9 @@ import {
   AlertTriangle,
   Shield,
   Zap,
-  Search
+  Search,
+  Brain,
+  FolderSearch
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import FileList from './FileList'
@@ -30,7 +32,10 @@ export default function Scanner() {
     selectAllFiles,
     deselectAllFiles,
     selectByRisk,
-    getStats
+    getStats,
+    runAiAnalysis,
+    isAiAnalyzing,
+    aiApiKey
   } = useAppStore()
 
   const [filterCategory, setFilterCategory] = useState<string | null>(null)
@@ -58,6 +63,10 @@ export default function Scanner() {
     startScan()
   }
 
+  const handleDeepScan = () => {
+    startScan({ deepScan: true })
+  }
+
   const handleClean = async () => {
     await cleanFiles()
   }
@@ -82,13 +91,32 @@ export default function Scanner() {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             {!isScanning ? (
-              <button
-                onClick={handleStartScan}
-                className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl hover:shadow-lg transition-all duration-300"
-              >
-                <Scan className="w-5 h-5 mr-2" />
-                开始扫描
-              </button>
+              <>
+                <button
+                  onClick={handleStartScan}
+                  className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl hover:shadow-lg transition-all duration-300"
+                >
+                  <Scan className="w-5 h-5 mr-2" />
+                  快速扫描
+                </button>
+                <button
+                  onClick={handleDeepScan}
+                  className="flex items-center px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl hover:shadow-lg transition-all duration-300"
+                >
+                  <FolderSearch className="w-5 h-5 mr-2" />
+                  深度扫描
+                </button>
+                {scannedFiles.length > 0 && aiApiKey && (
+                  <button
+                    onClick={runAiAnalysis}
+                    disabled={isAiAnalyzing}
+                    className="flex items-center px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-50"
+                  >
+                    <Brain className="w-5 h-5 mr-2" />
+                    {isAiAnalyzing ? 'AI 分析中...' : 'AI 智能分析'}
+                  </button>
+                )}
+              </>
             ) : (
               <button
                 onClick={stopScan}

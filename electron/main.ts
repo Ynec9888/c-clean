@@ -14,13 +14,15 @@ const getConfigPath = () => {
 
 const isDev = !app.isPackaged
 
-// ========== 减少磁盘占用和启动优化 ==========
-// 禁用 GPU 缓存（减少磁盘占用）
+// ========== 启动优化 ==========
+// 禁用 GPU 缓存
 app.commandLine.appendSwitch('--disable-gpu-cache')
-// 禁用磁盘缓存
-app.commandLine.appendSwitch('--disk-cache-size', '0')
-// 禁用媒体缓存
-app.commandLine.appendSwitch('--media-cache-size', '0')
+// 限制缓存大小
+app.commandLine.appendSwitch('--disk-cache-size', '52428800') // 50MB
+// 限制媒体缓存
+app.commandLine.appendSwitch('--media-cache-size', '52428800') // 50MB
+// 禁用硬件加速（减少资源占用）
+app.disableHardwareAcceleration()
 // ========== 优化结束 ==========
 
 let mainWindow: BrowserWindow | null = null

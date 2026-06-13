@@ -7,6 +7,7 @@ export interface ScanOptions {
   categories?: string[]
   minSize?: number
   maxAge?: number // 天数
+  deepScan?: boolean // 是否深度扫描
 }
 
 export interface ScanProgress {
@@ -115,8 +116,8 @@ export class FileScanner {
         // 每个目录扫描前让出主线程
         await this.delay(50)
 
-        // 深度扫描用2层，普通扫描用2层
-        const maxDepth = options.categories?.includes('other') ? 3 : 2
+        // 深度扫描用5层，快速扫描用2层
+        const maxDepth = options.deepScan ? 5 : 2
         const files = await this.scanDirectory(scanPath, options, 0, maxDepth)
 
         // 批量处理文件，每批10个
@@ -178,52 +179,45 @@ export class FileScanner {
     const userProfile = os.homedir()
     const windir = process.env.WINDIR || 'C:\\Windows'
 
-    // 基础扫描路径
-    const basePaths = [
+    // 扫描整个 C 盘的主要目录
+    return [
+      // 系统临时文件
       path.join(windir, 'Temp'),
       path.join(userProfile, 'AppData', 'Local', 'Temp'),
-      path.join(userProfile, 'AppData', 'Local', 'Microsoft', 'Windows', 'INetCache'),
-      path.join(userProfile, 'AppData', 'Local', 'Microsoft', 'Windows', 'Explorer'),
-      path.join(userProfile, 'AppData', 'Local', 'CrashDumps'),
-      path.join(windir, 'Prefetch'),
-      path.join(windir, 'SoftwareDistribution', 'Download')
-    ]
 
-    // 深度扫描额外路径（按软件分类）
-    const deepScanPaths = [
-      // 微信
-      path.join(userProfile, 'AppData', 'Roaming', 'Tencent', 'WeChat', 'FileStorage'),
-      path.join(userProfile, 'Documents', 'WeChat Files'),
-      // QQ
-      path.join(userProfile, 'AppData', 'Local', 'Tencent', 'QQ'),
-      path.join(userProfile, 'Documents', 'Tencent Files'),
-      // 浏览器缓存
-      path.join(userProfile, 'AppData', 'Local', 'Google', 'Chrome', 'User Data', 'Default', 'Cache'),
-      path.join(userProfile, 'AppData', 'Local', 'Microsoft', 'Edge', 'User Data', 'Default', 'Cache'),
-      path.join(userProfile, 'AppData', 'Local', 'Mozilla', 'Firefox', 'Profiles'),
-      // 游戏平台
-      path.join(userProfile, 'AppData', 'Local', 'Steam'),
-      path.join('C:', 'Program Files (x86)', 'Steam', 'steamapps', 'downloading'),
-      path.join(userProfile, 'AppData', 'Local', 'EpicGamesLauncher', 'Saved'),
-      // 开发工具
-      path.join(userProfile, 'AppData', 'Local', 'npm-cache'),
-      path.join(userProfile, 'AppData', 'Local', 'pip', 'cache'),
-      path.join(userProfile, 'AppData', 'Local', 'NuGet', 'Cache'),
-      path.join(userProfile, '.gradle', 'caches'),
-      path.join(userProfile, '.m2', 'repository'),
-      // 其他软件缓存
-      path.join(userProfile, 'AppData', 'Local', 'Discord', 'Cache'),
-      path.join(userProfile, 'AppData', 'Local', 'Slack', 'Cache'),
-      path.join(userProfile, 'AppData', 'Local', 'Spotify', 'Storage'),
-      path.join(userProfile, 'AppData', 'Local', 'Microsoft', 'Teams', 'Cache'),
-      path.join(userProfile, 'AppData', 'Roaming', 'Zoom', 'bin'),
-      // Windows 更新和日志
+      // 用户目录
+      path.join(userProfile, 'Downloads'),
+      path.join(userProfile, 'Documents'),
+      path.join(userProfile, 'Desktop'),
+      path.join(userProfile, 'Pictures'),
+      path.join(userProfile, 'Videos'),
+      path.join(userProfile, 'Music'),
+
+      // AppData 整个目录（包含所有软件数据）
+      path.join(userProfile, 'AppData', 'Local'),
+      path.join(userProfile, 'AppData', 'Roaming'),
+      path.join(userProfile, 'AppData', 'LocalLow'),
+
+      // Program Files
+      'C:\\Program Files',
+      'C:\\Program Files (x86)',
+      'C:\\ProgramData',
+
+      // Windows 系统
+      path.join(windir, 'SoftwareDistribution'),
       path.join(windir, 'Logs'),
+      path.join(windir, 'Prefetch'),
+      path.join(windir, 'Temp'),
       path.join(windir, 'Panther'),
-      path.join(windir, 'SoftwareDistribution', 'DataStore', 'Logs')
-    ]
+      path.join(windir, 'WinSxS'),
 
-    return [...basePaths, ...deepScanPaths]
+      // 回收站
+      'C:\\$Recycle.Bin',
+
+      // 其他常见位置
+      'C:\\Recovery',
+      'C:\\PerfLogs'
+    ]
   }
 
   private async scanDirectory(

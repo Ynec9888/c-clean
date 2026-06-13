@@ -64,7 +64,7 @@ export default function QuickActions() {
         setCurrentView('runtime')
         break
       case 'full-scan':
-        startScan()
+        startScan({ deepScan: true })
         setCurrentView('scanner')
         break
     }
