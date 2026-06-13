@@ -1,0 +1,18 @@
+appId: com.cclean.app
+productName: C-Clean
+directories:
+  output: release
+files:
+  - dist/**/*
+  - dist-electron/**/*
+win:
+  executableName: C-Clean
+  target:
+    - target: portable
+      arch:
+        - x64
+  icon: build/icon.svg
+portable:
+  artifactName: ${name}-${version}-portable.${ext}
+asar: true
+npmRebuild: false
