@@ -110,7 +110,7 @@ c-clean/
 | AI 服务 | 官网 | API Key 获取 |
 |---------|------|-------------|
 | DeepSeek | [platform.deepseek.com](https://platform.deepseek.com) | [获取 API Key](https://platform.deepseek.com/api_keys) |
-| 小米 MiMo | [mimo.mi.com](https://mimo.mi.com) | 官方文档获取 |
+| 小米 MiMo | [mimo.mi.com](https://mimo.mi.com) | [获取 API Key](https://mimo.mi.com) |
 | OpenAI | [platform.openai.com](https://platform.openai.com) | [获取 API Key](https://platform.openai.com/api-keys) |
 | Claude | [console.anthropic.com](https://console.anthropic.com) | [获取 API Key](https://console.anthropic.com/settings/keys) |
 
